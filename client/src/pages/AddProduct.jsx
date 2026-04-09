@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Upload, ImageIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, ImageIcon, Loader2, Sparkles } from "lucide-react";
 import { api } from "../services/api";
 import toast from "react-hot-toast";
 
@@ -19,6 +19,8 @@ const CATEGORIES = [
 export default function AddProduct() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [imageTags, setImageTags] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
   const [form, setForm] = useState({
     name: "",
@@ -64,6 +66,27 @@ export default function AddProduct() {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
+      // Silently analyze image with Azure Computer Vision to get tags for description generation
+      setImageTags([]);
+      api.analyzeImage(file)
+        .then(({ tags }) => { if (tags?.length) setImageTags(tags); })
+        .catch(() => {});
+    }
+  }
+
+  async function handleGenerateDescription() {
+    if (!form.name.trim() && imageTags.length === 0) { toast.error("Enter a product name or upload an image first"); return; }
+    if (!form.category) { toast.error("Select a category first"); return; }
+    setGeneratingDesc(true);
+    try {
+      const { description } = await api.generateDescription(form.name, form.category, form.price, imageTags);
+      setForm((prev) => ({ ...prev, description }));
+      if (errors.description) setErrors((prev) => ({ ...prev, description: undefined }));
+      toast.success("Description generated!");
+    } catch (err) {
+      toast.error("Failed to generate description");
+    } finally {
+      setGeneratingDesc(false);
     }
   }
 
@@ -84,7 +107,7 @@ export default function AddProduct() {
 
       const product = await api.createProduct(formData);
       toast.success("Product created successfully!");
-      navigate(`/products/${product._id}`);
+      navigate(`/products/${product.id}`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -163,14 +186,29 @@ export default function AddProduct() {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description *
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Description *
+            </label>
+            <button
+              type="button"
+              onClick={handleGenerateDescription}
+              disabled={generatingDesc}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 disabled:opacity-50"
+            >
+              {generatingDesc ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              {generatingDesc ? "Generating..." : "Auto-generate"}
+            </button>
+          </div>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
-            placeholder="Describe your product..."
+            placeholder="Describe your product, or use Auto-generate..."
             rows={4}
             className={`input-field ${errors.description ? "border-red-400" : ""}`}
           />
@@ -183,7 +221,7 @@ export default function AddProduct() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price ($) *
+              Price (Rs.) *
             </label>
             <input
               type="number"

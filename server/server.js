@@ -18,7 +18,7 @@ if (process.env.APPINSIGHTS_CONNECTION_STRING) {
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const connectDB = require("./config/db");
+const { connectDB } = require("./config/db");
 const productRoutes = require("./routes/products");
 const translateRoutes = require("./routes/translate");
 

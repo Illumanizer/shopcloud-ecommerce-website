@@ -224,7 +224,7 @@ export default function ProductDetail() {
             </div>
             <div className="flex gap-2">
               <Link
-                to={`/products/${product._id}/edit`}
+                to={`/products/${product.id}/edit`}
                 className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
               >
                 <Edit className="h-5 w-5" />

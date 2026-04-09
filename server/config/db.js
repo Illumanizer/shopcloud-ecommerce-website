@@ -1,21 +1,25 @@
-const mongoose = require("mongoose");
+const { Sequelize } = require("sequelize");
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "postgres",
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
+  logging: false,
+});
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-      throw new Error("MONGODB_URI environment variable is not set");
-    }
-
-    const conn = await mongoose.connect(uri, {
-      dbName: "productcatalogue",
-    });
-
-    console.log(`✅ MongoDB Atlas connected: ${conn.connection.host}`);
+    await sequelize.authenticate();
+    await sequelize.sync();
+    console.log("✅ Azure PostgreSQL connected via Sequelize");
   } catch (error) {
     console.error("❌ Database connection error:", error.message);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+module.exports = { sequelize, connectDB };

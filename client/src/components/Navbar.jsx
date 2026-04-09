@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ShoppingCart, Plus, Package, Search, X } from "lucide-react";
+import { ShoppingCart, Plus, Search, X, Zap } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useState, useEffect } from "react";
 
@@ -10,27 +10,29 @@ export default function Navbar() {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Sync input if URL search param changes externally
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
   }, [location.search]);
 
-  // Real-time search with 400ms debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       const trimmed = searchQuery.trim();
       if (trimmed) {
         navigate(`/?search=${encodeURIComponent(trimmed)}`);
       } else {
-        // Clear search — go back to home
-        if (searchParams.get("search")) {
-          navigate("/");
-        }
+        if (searchParams.get("search")) navigate("/");
       }
     }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   function handleClear() {
     setSearchQuery("");
@@ -38,53 +40,55 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40">
+    <nav className={`bg-white sticky top-0 z-40 transition-shadow duration-200 ${scrolled ? "shadow-md shadow-zinc-100" : "border-b border-zinc-100"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 gap-4">
+
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <Package className="h-8 w-8 text-primary-600" />
-            <span className="text-xl font-bold text-gray-900">
+          <Link to="/" className="flex items-center gap-2 shrink-0 group">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center group-hover:bg-primary-700 transition-colors">
+              <Zap className="h-4 w-4 text-white fill-white" />
+            </div>
+            <span className="text-lg font-bold text-zinc-900 tracking-tight">
               Shop<span className="text-primary-600">Cloud</span>
             </span>
           </Link>
 
-          {/* Search Bar */}
-          <form onSubmit={(e) => e.preventDefault()} className="hidden md:flex flex-1 max-w-lg mx-8">
+          {/* Search */}
+          <div className="hidden md:flex flex-1 max-w-md">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
-                placeholder="Search products, categories, tags..."
+                placeholder="Search products, tags..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-full bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
+                className="w-full pl-10 pr-9 py-2 border border-zinc-200 rounded-xl bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm text-zinc-900 placeholder:text-zinc-400"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
-          </form>
+          </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
-            {/* Mobile search toggle */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setMobileSearchOpen((o) => !o)}
-              className="md:hidden p-2 text-gray-500 hover:text-primary-600"
-              aria-label="Toggle search"
+              className="md:hidden p-2 text-zinc-500 hover:text-primary-600 transition-colors"
             >
               {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </button>
+
             <Link
               to="/products/new"
-              className="btn-primary flex items-center gap-2 text-sm"
+              className="btn-primary flex items-center gap-1.5 text-sm py-2 px-3.5"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Product</span>
@@ -92,11 +96,11 @@ export default function Navbar() {
 
             <button
               onClick={toggleCart}
-              className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors"
+              className="relative p-2 text-zinc-500 hover:text-primary-600 transition-colors rounded-xl hover:bg-primary-50"
             >
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-5 w-5" />
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                <span className="absolute -top-0.5 -right-0.5 bg-amber-500 text-white text-[10px] w-4.5 h-4.5 min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center font-bold leading-none px-1">
                   {totalItems}
                 </span>
               )}
@@ -104,26 +108,27 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      {/* Mobile search bar */}
+
+      {/* Mobile search */}
       {mobileSearchOpen && (
-        <div className="md:hidden px-4 py-2 border-t border-gray-100 bg-white">
+        <div className="md:hidden px-4 pb-3 pt-1 bg-white border-t border-zinc-100">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <input
               type="text"
               autoFocus
-              placeholder="Search products, categories, tags..."
+              placeholder="Search products, tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-full bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+              className="w-full pl-10 pr-9 py-2 border border-zinc-200 rounded-xl bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none text-sm"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>

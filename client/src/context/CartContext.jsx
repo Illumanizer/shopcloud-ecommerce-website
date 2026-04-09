@@ -7,24 +7,24 @@ const initialState = { items: [], isOpen: false };
 function cartReducer(state, action) {
   switch (action.type) {
     case "ADD_ITEM": {
-      const existing = state.items.find((i) => i._id === action.payload._id);
+      const existing = state.items.find((i) => i.id === action.payload.id);
       if (existing) {
         return {
           ...state,
           items: state.items.map((i) =>
-            i._id === action.payload._id ? { ...i, quantity: i.quantity + 1 } : i
+            i.id === action.payload.id ? { ...i, quantity: i.quantity + 1 } : i
           ),
         };
       }
       return { ...state, items: [...state.items, { ...action.payload, quantity: 1 }] };
     }
     case "REMOVE_ITEM":
-      return { ...state, items: state.items.filter((i) => i._id !== action.payload) };
+      return { ...state, items: state.items.filter((i) => i.id !== action.payload) };
     case "UPDATE_QUANTITY":
       return {
         ...state,
         items: state.items.map((i) =>
-          i._id === action.payload.id ? { ...i, quantity: action.payload.quantity } : i
+          i.id === action.payload.id ? { ...i, quantity: action.payload.quantity } : i
         ),
       };
     case "CLEAR_CART":

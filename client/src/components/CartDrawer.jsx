@@ -1,7 +1,9 @@
-import { X, Minus, Plus, ShoppingBag, Trash2, Tag } from "lucide-react";
+import { X, Minus, Plus, ShoppingBag, Trash2, Tag, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
 export default function CartDrawer() {
+  const navigate = useNavigate();
   const {
     items,
     isOpen,
@@ -43,7 +45,7 @@ export default function CartDrawer() {
           ) : (
             <div className="space-y-4">
               {items.map((item) => (
-                <div key={item._id} className="flex gap-4 p-3 bg-gray-50 rounded-lg">
+                <div key={item.id} className="flex gap-4 p-3 bg-gray-50 rounded-lg">
                   <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                     {item.imageUrl ? (
                       <img
@@ -69,8 +71,8 @@ export default function CartDrawer() {
                       <button
                         onClick={() =>
                           item.quantity > 1
-                            ? updateQuantity(item._id, item.quantity - 1)
-                            : removeFromCart(item._id)
+                            ? updateQuantity(item.id, item.quantity - 1)
+                            : removeFromCart(item.id)
                         }
                         className="p-0.5 hover:bg-gray-200 rounded"
                         aria-label="Decrease quantity"
@@ -83,7 +85,7 @@ export default function CartDrawer() {
                       <button
                         onClick={() =>
                           item.quantity < item.stock
-                            ? updateQuantity(item._id, item.quantity + 1)
+                            ? updateQuantity(item.id, item.quantity + 1)
                             : null
                         }
                         disabled={item.quantity >= item.stock}
@@ -96,7 +98,7 @@ export default function CartDrawer() {
                         <span className="text-xs text-amber-500">Max stock</span>
                       )}
                       <button
-                        onClick={() => removeFromCart(item._id)}
+                        onClick={() => removeFromCart(item.id)}
                         className="ml-auto p-1 text-red-400 hover:text-red-600"
                         aria-label="Remove item"
                       >
@@ -117,8 +119,11 @@ export default function CartDrawer() {
               <span>Total</span>
               <span>₹{totalPrice.toLocaleString("en-IN")}</span>
             </div>
-            <button className="w-full btn-primary py-3 text-center font-semibold">
-              Checkout (Demo)
+            <button
+              onClick={() => { toggleCart(); navigate("/checkout"); }}
+              className="w-full btn-primary py-3 flex items-center justify-center gap-2 font-semibold"
+            >
+              Checkout <ArrowRight className="h-4 w-4" />
             </button>
             <button
               onClick={() => {

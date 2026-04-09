@@ -57,4 +57,30 @@ async function analyzeImage(imageUrl) {
   }
 }
 
-module.exports = { analyzeImage };
+/**
+ * Analyze an image buffer and return descriptive tags.
+ * Used for pre-upload analysis (e.g., description generation before save).
+ */
+async function analyzeImageFromBuffer(buffer) {
+  const client = getVisionClient();
+  if (!client) return [];
+
+  try {
+    const { Readable } = require("stream");
+    const result = await client.analyzeImageInStream(() => Readable.from(buffer), {
+      visualFeatures: ["Tags", "Description"],
+    });
+
+    const tags = (result.tags || [])
+      .filter((t) => t.confidence > 0.7)
+      .map((t) => t.name)
+      .slice(0, 10);
+
+    return tags;
+  } catch (error) {
+    console.error("❌ Computer Vision stream error:", error.message);
+    return [];
+  }
+}
+
+module.exports = { analyzeImage, analyzeImageFromBuffer };

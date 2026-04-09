@@ -1,5 +1,5 @@
 require("dotenv").config();
-const mongoose = require("mongoose");
+const { connectDB } = require("./config/db");
 const Product = require("./models/Product");
 
 const products = [
@@ -178,18 +178,14 @@ const products = [
 
 async function seed() {
   try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) throw new Error("MONGODB_URI not set in .env");
-
-    await mongoose.connect(uri, { dbName: "productcatalogue" });
-    console.log("✅ Connected to MongoDB Atlas");
+    await connectDB();
 
     // Delete all existing products
-    const deleted = await Product.deleteMany({});
-    console.log(`🗑️  Deleted ${deleted.deletedCount} existing products`);
+    const deleted = await Product.destroy({ where: {}, truncate: true });
+    console.log(`🗑️  Cleared existing products`);
 
     // Insert new products
-    const inserted = await Product.insertMany(products);
+    const inserted = await Product.bulkCreate(products);
     console.log(`✅ Inserted ${inserted.length} new products:\n`);
     inserted.forEach((p) => console.log(`   • ${p.name} — ₹${p.price}`));
 

@@ -1,89 +1,84 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/db");
 
-const reviewSchema = new mongoose.Schema({
-  author: { type: String, required: true, trim: true, maxlength: 100 },
-  rating: { type: Number, required: true, min: 1, max: 5 },
-  comment: { type: String, required: true, trim: true, maxlength: 1000 },
-  // Azure Language AI — sentiment analysis
-  sentiment: {
-    type: String,
-    enum: ["positive", "negative", "neutral", "mixed", null],
-    default: null,
-  },
-  sentimentScore: { type: Number, default: null },
-  createdAt: { type: Date, default: Date.now },
-});
-
-const productSchema = new mongoose.Schema(
+const Product = sequelize.define(
+  "Product",
   {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
     name: {
-      type: String,
-      required: [true, "Product name is required"],
-      trim: true,
-      maxlength: [200, "Product name cannot exceed 200 characters"],
+      type: DataTypes.STRING(200),
+      allowNull: false,
+      validate: { notEmpty: true, len: [1, 200] },
     },
     description: {
-      type: String,
-      required: [true, "Product description is required"],
-      trim: true,
-      maxlength: [2000, "Description cannot exceed 2000 characters"],
+      type: DataTypes.TEXT,
+      allowNull: false,
+      validate: { notEmpty: true },
     },
     price: {
-      type: Number,
-      required: [true, "Price is required"],
-      min: [0, "Price cannot be negative"],
-      max: [999999.99, "Price cannot exceed 999,999.99"],
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      validate: { min: 0, max: 999999.99 },
     },
     category: {
-      type: String,
-      required: [true, "Category is required"],
-      trim: true,
-      enum: {
-        values: [
-          "Electronics",
-          "Clothing",
-          "Books",
-          "Home & Kitchen",
-          "Sports",
-          "Toys",
-          "Health & Beauty",
-          "Automotive",
-          "Other",
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      validate: {
+        isIn: [
+          [
+            "Electronics",
+            "Clothing",
+            "Books",
+            "Home & Kitchen",
+            "Sports",
+            "Toys",
+            "Health & Beauty",
+            "Automotive",
+            "Other",
+          ],
         ],
-        message: "{VALUE} is not a valid category",
       },
     },
     imageUrl: {
-      type: String,
-      default: "",
+      type: DataTypes.TEXT,
+      defaultValue: "",
     },
     aiTags: {
-      type: [String],
-      default: [],
+      type: DataTypes.ARRAY(DataTypes.TEXT),
+      defaultValue: [],
     },
     stock: {
-      type: Number,
-      default: 0,
-      min: [0, "Stock cannot be negative"],
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: { min: 0 },
     },
     featured: {
-      type: Boolean,
-      default: false,
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
-    reviews: [reviewSchema],
+    // Reviews stored as JSONB — avoids a separate join table for this use case
+    reviews: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
     averageRating: {
-      type: Number,
-      default: 0,
+      type: DataTypes.DECIMAL(3, 1),
+      defaultValue: 0,
     },
   },
   {
+    tableName: "products",
     timestamps: true,
+    underscored: true,
   }
 );
 
-// Update average rating when reviews change
-productSchema.methods.updateAverageRating = function () {
-  if (this.reviews.length === 0) {
+Product.prototype.updateAverageRating = function () {
+  if (!this.reviews || this.reviews.length === 0) {
     this.averageRating = 0;
   } else {
     const sum = this.reviews.reduce((acc, r) => acc + r.rating, 0);
@@ -91,8 +86,4 @@ productSchema.methods.updateAverageRating = function () {
   }
 };
 
-// Regular indexes for search (text indexes not supported in Cosmos DB for MongoDB)
-productSchema.index({ name: 1 });
-productSchema.index({ category: 1 });
-
-module.exports = mongoose.model("Product", productSchema);
+module.exports = Product;

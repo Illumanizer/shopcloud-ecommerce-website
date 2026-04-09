@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Upload, ImageIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, ImageIcon, Loader2, Sparkles } from "lucide-react";
 import { api } from "../services/api";
 import toast from "react-hot-toast";
 
@@ -21,6 +21,8 @@ export default function EditProduct() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [imageTags, setImageTags] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [form, setForm] = useState({
@@ -79,6 +81,26 @@ export default function EditProduct() {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
+      setImageTags([]);
+      api.analyzeImage(file)
+        .then(({ tags }) => { if (tags?.length) setImageTags(tags); })
+        .catch(() => {});
+    }
+  }
+
+  async function handleGenerateDescription() {
+    if (!form.name.trim() && imageTags.length === 0) { toast.error("Enter a product name or upload an image first"); return; }
+    if (!form.category) { toast.error("Select a category first"); return; }
+    setGeneratingDesc(true);
+    try {
+      const { description } = await api.generateDescription(form.name, form.category, form.price, imageTags);
+      setForm((prev) => ({ ...prev, description }));
+      if (errors.description) setErrors((prev) => ({ ...prev, description: undefined }));
+      toast.success("Description generated!");
+    } catch (err) {
+      toast.error("Failed to generate description");
+    } finally {
+      setGeneratingDesc(false);
     }
   }
 
@@ -159,7 +181,18 @@ export default function EditProduct() {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">Description *</label>
+            <button
+              type="button"
+              onClick={handleGenerateDescription}
+              disabled={generatingDesc}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 disabled:opacity-50"
+            >
+              {generatingDesc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {generatingDesc ? "Generating..." : "Auto-generate"}
+            </button>
+          </div>
           <textarea name="description" value={form.description} onChange={handleChange} rows={4} className={`input-field ${errors.description ? "border-red-400" : ""}`} />
           {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
         </div>
@@ -167,7 +200,7 @@ export default function EditProduct() {
         {/* Price & Category */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price ($) *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.) *</label>
             <input type="number" name="price" value={form.price} onChange={handleChange} step="0.01" min="0" className={`input-field ${errors.price ? "border-red-400" : ""}`} />
             {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
           </div>

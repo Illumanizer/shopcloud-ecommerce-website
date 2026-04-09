@@ -61,6 +61,22 @@ export const api = {
     });
   },
 
+  // Analyze image with Azure Computer Vision (pre-upload, returns tags)
+  analyzeImage(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+    return request("/products/analyze-image", { method: "POST", body: formData });
+  },
+
+  // AI Description Generator — Azure Language AI + Computer Vision powered
+  generateDescription(name, category, price, imageTags = []) {
+    return request("/products/generate-description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, category, price, imageTags }),
+    });
+  },
+
   // Categories & Stats
   getCategories() {
     return request("/products/categories");
@@ -69,4 +85,5 @@ export const api = {
   getStats() {
     return request("/products/stats");
   },
+
 };
