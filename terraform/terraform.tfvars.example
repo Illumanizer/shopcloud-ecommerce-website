@@ -1,0 +1,18 @@
+# Copy this file to terraform.tfvars and fill in your real values.
+# terraform.tfvars is gitignored — never commit it.
+
+subscription_id = "75b3d2e5-8a1a-4a23-acaf-0ffdf1823cc8"
+
+# PostgreSQL
+db_admin_password = "ShopCloud@2024!"
+
+# Azure Blob Storage connection string
+azure_storage_connection_string = "DefaultEndpointsProtocol=https;AccountName=shopcloudpranavstore;AccountKey=XXXX;EndpointSuffix=core.windows.net"
+
+# Cognitive Services keys
+azure_vision_key      = "YOUR_COGNITIVE_SERVICES_KEY"
+azure_language_key    = "YOUR_COGNITIVE_SERVICES_KEY"
+azure_translator_key  = "YOUR_TRANSLATOR_KEY"
+
+# Application Insights
+appinsights_connection_string = "InstrumentationKey=XXXX;IngestionEndpoint=https://eastasia-0.in.applicationinsights.azure.com/"
